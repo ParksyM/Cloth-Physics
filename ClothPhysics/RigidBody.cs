@@ -54,8 +54,6 @@ namespace ClothPhysics
 
                 CurrentForce = Vector2.Zero;
             }
-
-
         }
 
         public void Step(float dt, Vector2 Gravity, Vector2 WorldForce, float damping)

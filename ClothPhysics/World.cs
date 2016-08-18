@@ -9,10 +9,13 @@ namespace ClothPhysics
     class World
     {
         public MassSpring mMassSpring { get; private set; }
+        private int mClothWidth = 25;
+        private int mClothHeight = 20;
+        private Vector2 mClothOffset = new Vector2(160, 50);
 
         public World()
         {
-            mMassSpring = new MassSpring(25, 20, new Vector2(50, 50));
+            mMassSpring = new MassSpring(mClothWidth, mClothHeight, mClothOffset);
         }
 
         public void Update(float dt)

@@ -10,28 +10,29 @@ namespace ClothPhysics
     {
         public List<SpringNode> Grid;
         //float[] Forces;
-        float SpringKoeff = 5000f;
+        float SpringKoeff = 10000f;
         float StiffnessKoeff = 0.1f;
         float SpawnLength = 20f;
         float RestLength = 20f;
         float RestLengthDiag;// = (float)Math.Sqrt(RestLength*RestLength)
-        float NodeMass = 20f;
+        float NodeMass = 10f;
         float SpringDamping = 20f;
 
-        float grav = 98f;
-        float gravScale = 1f;
+        //float grav = 98f;
+        //float gravScale = 0.5f;
 
-        Vector2 Gravity;
-        Vector2 LeftForce = new Vector2(0f, 0);
+        Vector2 Gravity = new Vector2(0, 98f);
+        //The force applied to the cloth by the world. Used to represent wind.
+        Vector2 WorldForce = new Vector2();
         Random Random;
 
-        float LeftForceTime = 1f;
-        float LeftForceCurrentTime = 0f;
+        float WorldForceTime = 1f;
+        float WorldForceDeltaTime = 0f;
 
         //TODO: Tidy up static node constraints
         //consider changing nodes after entire grid is generated
 
-        bool LockTop = false;
+        bool LockTop = true;
         bool LockBottom = false;
         bool LockLeft = false;
         bool LockRight = false;
@@ -43,10 +44,12 @@ namespace ClothPhysics
 
         bool DoDiagonal = false;
 
+        bool ApplyExperimentalStiffness = false;
+
         public MassSpring(int nodeWidth, int nodeHeight, Vector2 gridOffset)
         {
             Random = new Random();
-            Gravity = new Vector2(0, grav * gravScale);
+            //Gravity = new Vector2(0, grav * gravScale);
             RestLengthDiag = (float)Math.Sqrt(2 * RestLength * RestLength);
             //RestLengthDiag = 70.7106781187f;
             //RestLengthDiag = 75f;
@@ -127,11 +130,11 @@ namespace ClothPhysics
 
         public void Update(float dt)
         {
-            LeftForceCurrentTime += dt;
-            if(LeftForceCurrentTime > LeftForceTime)
+            WorldForceDeltaTime += dt;
+            if(WorldForceDeltaTime > WorldForceTime)
             {
-                //LeftForce = new Vector2((float)Random.NextDouble() * 1000f, 0);
-                LeftForceCurrentTime = 0f;
+                WorldForce = new Vector2((float)Random.NextDouble() * 1000f, 0);
+                WorldForceDeltaTime = 0f;
             }
 
             foreach (SpringNode node in Grid)
@@ -145,14 +148,22 @@ namespace ClothPhysics
             foreach (SpringNode node in Grid)
             {
                 //node.rigidBody.Step(dt, Gravity, node.currentForce + LeftForce, SpringDamping);
-                node.rigidBody.Step(dt, Gravity, LeftForce, SpringDamping);
+                node.rigidBody.Step(dt, Gravity, WorldForce, SpringDamping);
             }
 
-            foreach(SpringNode node in Grid)
+            /// <summary>
+            /// Attempt to limit stretching factor in order to better simulate real world cloth
+            /// Based on research paper available at: 
+            /// https://graphics.stanford.edu/courses/cs468-02-winter/Papers/Rigidcloth.pdf
+            /// </summary>
+            if (ApplyExperimentalStiffness)
             {
-                foreach(SpringJoint joint in node.springJoints)
+                foreach (SpringNode node in Grid)
                 {
-                    joint.ApplyStiffness();
+                    foreach (SpringJoint joint in node.springJoints)
+                    {
+                        joint.ApplyStiffness();
+                    }
                 }
             }
         }
